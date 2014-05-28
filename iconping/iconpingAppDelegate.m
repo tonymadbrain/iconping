@@ -186,12 +186,18 @@ int64_t ustime(void) {
     [myMenu addItem: menuItem];
 
     myStatusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength] retain];
+    [myStatusItem setHighlightMode:YES];
     
-    myStatusImageOK = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"iconok" ofType:@"png"]];
-    myStatusImageSLOW = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"iconslow" ofType:@"png"]];
-    myStatusImageKO = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"iconko" ofType:@"png"]];
-    [myStatusItem setImage:myStatusImageKO];
+    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"online" ofType:@"png"]];
+    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"online-alternate" ofType:@"png"]];
+    
+    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"offline" ofType:@"png"]];
+    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"offline-alternate" ofType:@"png"]];
+    
+    [myStatusItem setImage:onlineIcon];
+    [myStatusItem setAlternateImage:onlineIconAlternate];
     [myStatusItem setMenu: myMenu];
+    
     [self changeConnectionState: CONN_STATE_KO];
     
     icmp_socket = -1;
@@ -224,23 +230,36 @@ int64_t ustime(void) {
     } else {
         state = CONN_STATE_SLOW;
     }
+    
     if (state != connection_state) {
         [self changeConnectionState: state];
     }
 }
 
+- (void) showNotification:(NSString *)title message:(NSString *)message
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = title;
+    notification.informativeText = message;
+    notification.soundName = NSUserNotificationDefaultSoundName;
+    
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+}
+
 - (void) changeConnectionState: (int) state
 {
     if (state == CONN_STATE_KO) {
-        [myStatusItem setImage:myStatusImageKO];
+        [myStatusItem setImage:offlineIcon];
+        [myStatusItem setAlternateImage:offlineIconAlternate];
         [statusMenuItem setTitle:@"No Connection!"];
-    } else if (state == CONN_STATE_OK) {
-        [myStatusItem setImage:myStatusImageOK];
+//        [self showNotification:@"Your connection is down" message:@"Connection is down!"];
+    } else {
+        [myStatusItem setImage:onlineIcon];
+        [myStatusItem setAlternateImage:onlineIconAlternate];
         [statusMenuItem setTitle:@"Connection OK"];
-    } else if (state == CONN_STATE_SLOW) {
-        [myStatusItem setImage:myStatusImageSLOW];
-        [statusMenuItem setTitle:@"Connection is slow"];
+//        [self showNotification:@"Your connection is up" message:@"Looks like your connection is back!"];
     }
+    
     connection_state = state;
 }
 
@@ -359,15 +378,13 @@ int64_t ustime(void) {
 	
 	// Create a reference to the shared file list.
 	LSSharedFileListRef loginItems = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
-	if (loginItems) {
-		if (![self loginItemExistsWithLoginItemReference:loginItems ForPath:appPath]) {
-			[self enableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
-            retval = YES;
-		} else {
-			[self disableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
-            retval = NO;
-        }
-	}
+	if (![self loginItemExistsWithLoginItemReference:loginItems ForPath:appPath]) {
+        [self enableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
+        retval = YES;
+    } else {
+        [self disableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
+        retval = NO;
+    }
 	CFRelease(loginItems);
     return retval;
 }

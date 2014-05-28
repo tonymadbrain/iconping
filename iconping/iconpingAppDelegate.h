@@ -11,7 +11,7 @@
 @interface iconpingAppDelegate : NSObject <NSApplicationDelegate> {
     NSWindow *window;
     NSStatusItem *myStatusItem;
-    NSImage *myStatusImageOK, *myStatusImageSLOW, *myStatusImageKO;
+    NSImage *onlineIcon, *onlineIconAlternate, *offlineIcon, *offlineIconAlternate;
     NSMenu *myMenu;
     NSMenuItem *statusMenuItem, *openAtStartupMenuItem;
     uint16_t icmp_id;
@@ -23,6 +23,7 @@
 }
 
 - (void) changeConnectionState: (int) state;
+- (void) showNotification: (NSString*)title message:(NSString*)message;
 - (BOOL)loginItemExists;
 - (BOOL)toggleLoginItem;
 
