@@ -13,7 +13,8 @@
     NSStatusItem *myStatusItem;
     NSImage *onlineIcon, *onlineIconAlternate, *offlineIcon, *offlineIconAlternate;
     NSMenu *myMenu;
-    NSMenuItem *statusMenuItem, *openAtStartupMenuItem;
+    NSMenuItem *statusMenuItem, *openAtStartupMenuItem, *level3MenuItem, *googleMenuItem;
+    char* hostToPing;
     uint16_t icmp_id;
     uint16_t icmp_seq;
     int64_t last_received_time;
@@ -22,6 +23,8 @@
     int connection_state;
 }
 
+- (void) useLevel3;
+- (void) useGoogle;
 - (void) changeConnectionState: (int) state;
 - (void) showNotification: (NSString*)title message:(NSString*)message;
 - (BOOL)loginItemExists;

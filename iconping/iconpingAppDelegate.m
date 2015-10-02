@@ -106,9 +106,9 @@ int64_t ustime(void) {
     int s = icmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
     struct sockaddr_in sa;
     struct ICMPHeader icmp;
-    
+    NSLog(@"Ping host: %s", hostToPing);
     if (s == -1) return;
-    inet_aton("4.2.2.2", &sa.sin_addr);
+    inet_aton(hostToPing, &sa.sin_addr);
     setSocketNonBlocking(s);
     
     /* Note that we create always a new socket, with a different identifier
@@ -144,9 +144,7 @@ int64_t ustime(void) {
     reply = (struct ICMPHeader*) (packet+icmpoff);
     
     /* Make sure that identifier and sequence match */
-    if (reply->identifier != icmp_id ||
-        reply->sequenceNumber != icmp_seq)
-    {
+    if (reply->identifier != icmp_id || reply->sequenceNumber != icmp_seq) {
         return;
     }
     
@@ -154,12 +152,11 @@ int64_t ustime(void) {
     if (reply->sentTime > last_received_time) {
         last_rtt = (int)(ustime()-reply->sentTime)/1000;
         last_received_time = reply->sentTime;
-        [myStatusItem setToolTip:[NSString stringWithFormat:@"rtt < %.1f seconds", (float)last_rtt/1000]];
+        [myStatusItem setToolTip:[NSString stringWithFormat:@"%s: rtt < %.1f seconds", hostToPing, (float)last_rtt/1000]];
     }
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification
-{
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     NSBundle *bundle = [NSBundle mainBundle];
     /*
     [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(timerHandler:) userInfo:nil repeats:YES];
@@ -171,16 +168,26 @@ int64_t ustime(void) {
     [[NSRunLoop mainRunLoop] addTimer:[NSTimer timerWithTimeInterval:0.1 invocation:invocation repeats:YES] forMode:NSRunLoopCommonModes];
 
     myMenu = [[NSMenu alloc] initWithTitle:@"Menu Title"];
-    NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Quit Icon Ping" action:@selector(exitAction) keyEquivalent:@"q"];
+    NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Quit Icon Ping" action:@selector(exitAction) keyEquivalent:@""];
     [menuItem setEnabled:YES];
   
     statusMenuItem = [[NSMenuItem alloc] initWithTitle:@"..." action:nil keyEquivalent:@""];
     [statusMenuItem setEnabled:NO];
     
+    level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"4.2.2.2" action:@selector(useLevel3) keyEquivalent:@""];
+    [level3MenuItem setEnabled:YES];
+    
+    googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useGoogle) keyEquivalent:@""];
+    
     openAtStartupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Open at startup" action:@selector(toggleStartupAction) keyEquivalent:@""];
     [openAtStartupMenuItem setEnabled:YES];
-    if ([self loginItemExists]) [openAtStartupMenuItem setState:NSOnState];
+    if ([self loginItemExists]) {
+        [openAtStartupMenuItem setState:NSOnState];
+    }
     
+    [myMenu addItem:level3MenuItem];
+    [myMenu addItem:googleMenuItem];
+    [myMenu addItem:[NSMenuItem separatorItem]];
     [myMenu addItem: statusMenuItem];
     [myMenu addItem: openAtStartupMenuItem];
     [myMenu addItem: menuItem];
@@ -188,17 +195,18 @@ int64_t ustime(void) {
     myStatusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength] retain];
     [myStatusItem setHighlightMode:YES];
     
-    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"online" ofType:@"png"]];
-    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"online-alternate" ofType:@"png"]];
+    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"up" ofType:@"png"]];
+    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"up-alternate" ofType:@"png"]];
     
-    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"offline" ofType:@"png"]];
-    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"offline-alternate" ofType:@"png"]];
+    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"down" ofType:@"png"]];
+    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"down-alternate" ofType:@"png"]];
     
     [myStatusItem setImage:onlineIcon];
     [myStatusItem setAlternateImage:onlineIconAlternate];
     [myStatusItem setMenu: myMenu];
     
     [self changeConnectionState: CONN_STATE_KO];
+    [self useGoogle];
     
     icmp_socket = -1;
     last_received_time = 0;
@@ -265,6 +273,18 @@ int64_t ustime(void) {
 
 - (void) exitAction {
     exit(0);
+}
+
+- (void) useLevel3 {
+    hostToPing = "4.2.2.2";
+    [googleMenuItem setState:NSOffState];
+    [level3MenuItem setState:NSOnState];
+}
+
+- (void) useGoogle {
+    hostToPing = "8.8.8.8";
+    [googleMenuItem setState:NSOnState];
+    [level3MenuItem setState:NSOffState];
 }
 
 - (void) toggleStartupAction {
@@ -341,6 +361,7 @@ int64_t ustime(void) {
 	// We're going to grab the contents of the shared file list (LSSharedFileListItemRef objects)
 	// and pop it in an array so we can iterate through it to find our item.
 	CFArrayRef loginItemsArray = LSSharedFileListCopySnapshot(theLoginItemsRefs, &seedValue);
+    
 	for (id item in (NSArray *)loginItemsArray) {    
 		LSSharedFileListItemRef itemRef = (LSSharedFileListItemRef)item;
 		if (LSSharedFileListItemResolve(itemRef, 0, (CFURLRef*) &thePath, NULL) == noErr) {
@@ -353,7 +374,8 @@ int64_t ustime(void) {
 		// for releasing the CFURLRef that is returned
 		CFRelease(thePath);
 	}
-	CFRelease(loginItemsArray);
+    
+	//CFRelease(loginItemsArray);
 	
 	return found;
 }
