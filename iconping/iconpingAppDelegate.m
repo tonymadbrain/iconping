@@ -37,6 +37,12 @@ struct ICMPHeader {
 #define CONN_STATE_SLOW 1
 #define CONN_STATE_OK 2
 
+#ifdef DEBUG
+    #define DLog NSLog
+#else
+    #define DLog(X, ...) ;;;
+#endif
+
 /* This is the standard BSD checksum code, modified to use modern types. */
 static uint16_t in_cksum(const void *buffer, size_t bufferLen)
 {
@@ -106,7 +112,7 @@ int64_t ustime(void) {
     int s = icmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
     struct sockaddr_in sa;
     struct ICMPHeader icmp;
-    NSLog(@"Ping host: %s", hostToPing);
+    DLog(@"Ping host: %s", hostToPing);
     if (s == -1) return;
     inet_aton(hostToPing, &sa.sin_addr);
     setSocketNonBlocking(s);
@@ -134,10 +140,10 @@ int64_t ustime(void) {
     int icmpoff;
     
     if (nread <= 0) return;
-    NSLog(@"Received ICMP %d bytes\n", (int)nread);
+    DLog(@"Received ICMP %d bytes\n", (int)nread);
     
     icmpoff = (packet[0]&0x0f)*4;
-    NSLog(@"ICMP offset: %d\n", icmpoff);
+    DLog(@"ICMP offset: %d\n", icmpoff);
     
     /* Don't process malformed packets. */
     if (nread < (icmpoff + (signed)sizeof(struct ICMPHeader))) return;
@@ -148,7 +154,7 @@ int64_t ustime(void) {
         return;
     }
     
-    NSLog(@"OK received an ICMP packet that matches!\n");
+    DLog(@"OK received an ICMP packet that matches!\n");
     if (reply->sentTime > last_received_time) {
         last_rtt = (int)(ustime()-reply->sentTime)/1000;
         last_received_time = reply->sentTime;
@@ -235,13 +241,13 @@ int64_t ustime(void) {
         [pauseResumeMenuItem setState:NSOffState];
         [self scheduleTimer];
         [statusMenuItem setTitle:@"Paused"];
-        NSLog(@"Resuming");
+        DLog(@"Resuming");
     } else {
         [pauseResumeMenuItem setState:NSOnState];
         [myStatusItem setImage:pausedIcon];
         [myStatusItem setAlternateImage:pausedIconAlternate];
         [timer invalidate];
-        NSLog(@"Pausing");
+        DLog(@"Pausing");
     }
 }
 
@@ -277,7 +283,7 @@ int64_t ustime(void) {
     
     clicks++;
     if ((clicks % 10) == 0) {
-        NSLog(@"Sending ping\n");
+        DLog(@"Sending ping\n");
         
         [self sendPingwithId:icmp_id andSeq: icmp_seq];
     }
