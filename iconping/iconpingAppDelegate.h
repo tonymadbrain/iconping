@@ -11,9 +11,11 @@
 @interface iconpingAppDelegate : NSObject <NSApplicationDelegate> {
     NSWindow *window;
     NSStatusItem *myStatusItem;
-    NSImage *onlineIcon, *onlineIconAlternate, *offlineIcon, *offlineIconAlternate;
+    NSImage *onlineIcon, *onlineIconAlternate, *offlineIcon, *offlineIconAlternate, *pausedIcon, *pausedIconAlternate;
     NSMenu *myMenu;
-    NSMenuItem *statusMenuItem, *openAtStartupMenuItem, *level3MenuItem, *googleMenuItem;
+    NSDictionary *icons;
+    NSTimer *timer;
+    NSMenuItem *statusMenuItem, *openAtStartupMenuItem, *level3MenuItem, *googleMenuItem, *pauseResumeMenuItem;
     char* hostToPing;
     uint16_t icmp_id;
     uint16_t icmp_seq;
@@ -25,6 +27,7 @@
 
 - (void) useLevel3;
 - (void) useGoogle;
+- (void) pauseResume;
 - (void) changeConnectionState: (int) state;
 - (void) showNotification: (NSString*)title message:(NSString*)message;
 - (BOOL)loginItemExists;

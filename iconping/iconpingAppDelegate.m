@@ -158,15 +158,9 @@ int64_t ustime(void) {
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     NSBundle *bundle = [NSBundle mainBundle];
-    /*
-    [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(timerHandler:) userInfo:nil repeats:YES];
-     */
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
-                                [self methodSignatureForSelector:@selector(timerHandler:)]];
-    [invocation setTarget:self];
-    [invocation setSelector:@selector(timerHandler:)];
-    [[NSRunLoop mainRunLoop] addTimer:[NSTimer timerWithTimeInterval:0.1 invocation:invocation repeats:YES] forMode:NSRunLoopCommonModes];
-
+    
+    [self scheduleTimer];
+    
     myMenu = [[NSMenu alloc] initWithTitle:@"Menu Title"];
     NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Quit Icon Ping" action:@selector(exitAction) keyEquivalent:@""];
     [menuItem setEnabled:YES];
@@ -177,6 +171,9 @@ int64_t ustime(void) {
     level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"4.2.2.2" action:@selector(useLevel3) keyEquivalent:@""];
     [level3MenuItem setEnabled:YES];
     
+    pauseResumeMenuItem = [[NSMenuItem alloc] initWithTitle:@"Pause" action:@selector(pauseResume) keyEquivalent:@""];
+    [pauseResumeMenuItem setEnabled:YES];
+    
     googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useGoogle) keyEquivalent:@""];
     
     openAtStartupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Open at startup" action:@selector(toggleStartupAction) keyEquivalent:@""];
@@ -185,21 +182,28 @@ int64_t ustime(void) {
         [openAtStartupMenuItem setState:NSOnState];
     }
     
+    [myMenu addItem:pauseResumeMenuItem];
+    [myMenu addItem:[NSMenuItem separatorItem]];
     [myMenu addItem:level3MenuItem];
     [myMenu addItem:googleMenuItem];
     [myMenu addItem:[NSMenuItem separatorItem]];
     [myMenu addItem: statusMenuItem];
     [myMenu addItem: openAtStartupMenuItem];
     [myMenu addItem: menuItem];
+    
+    icons = [self getIcons];
 
     myStatusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength] retain];
     [myStatusItem setHighlightMode:YES];
     
-    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"up" ofType:@"png"]];
-    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"up-alternate" ofType:@"png"]];
+    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up"] ofType:@"png"]];
+    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up-alternate"] ofType:@"png"]];
     
-    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"down" ofType:@"png"]];
-    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:@"down-alternate" ofType:@"png"]];
+    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down"] ofType:@"png"]];
+    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down-alternate"] ofType:@"png"]];
+    
+    pausedIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused"] ofType:@"png"]];
+    pausedIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused-alternate"] ofType:@"png"]];
     
     [myStatusItem setImage:onlineIcon];
     [myStatusItem setAlternateImage:onlineIconAlternate];
@@ -213,6 +217,56 @@ int64_t ustime(void) {
     last_rtt = 0;
     icmp_id = random()&0xffff;
     icmp_seq = random()&0xffff;
+}
+
+- (void) scheduleTimer {
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
+                  [self methodSignatureForSelector:@selector(timerHandler:)]];
+    
+    timer = [NSTimer timerWithTimeInterval:0.1 invocation:invocation repeats:YES];
+    
+    [invocation setTarget:self];
+    [invocation setSelector:@selector(timerHandler:)];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+}
+
+- (void) pauseResume {
+    if ([pauseResumeMenuItem state] == NSOnState) {
+        [pauseResumeMenuItem setState:NSOffState];
+        [self scheduleTimer];
+        [statusMenuItem setTitle:@"Paused"];
+        NSLog(@"Resuming");
+    } else {
+        [pauseResumeMenuItem setState:NSOnState];
+        [myStatusItem setImage:pausedIcon];
+        [myStatusItem setAlternateImage:pausedIconAlternate];
+        [timer invalidate];
+        NSLog(@"Pausing");
+    }
+}
+
+- (NSDictionary *) getIcons {
+    NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+    
+    if ([osxMode isEqualToString:@"Dark"]) {
+        return @{
+             @"up" : @"up-alternate",
+             @"up-alternate" : @"up-alternate",
+             @"down" : @"down-alternate",
+             @"down-alternate" : @"down-alternate",
+             @"paused" : @"paused-alternate",
+             @"paused-alternate" : @"paused-alternate"
+        };
+    } else {
+        return @{
+             @"up" : @"up",
+             @"up-alternate" : @"up-alternate",
+             @"down" : @"down",
+             @"down-alternate" : @"down-alternate",
+             @"paused" : @"paused",
+             @"paused-alternate" : @"paused-alternate"
+        };
+    }
 }
 
 - (void) timerHandler: (NSTimer *) t
@@ -260,12 +314,12 @@ int64_t ustime(void) {
         [myStatusItem setImage:offlineIcon];
         [myStatusItem setAlternateImage:offlineIconAlternate];
         [statusMenuItem setTitle:@"No Connection!"];
-//        [self showNotification:@"Your connection is down" message:@"Connection is down!"];
+        // [self showNotification:@"Your connection is down" message:@"Connection is down!"];
     } else {
         [myStatusItem setImage:onlineIcon];
         [myStatusItem setAlternateImage:onlineIconAlternate];
         [statusMenuItem setTitle:@"Connection OK"];
-//        [self showNotification:@"Your connection is up" message:@"Looks like your connection is back!"];
+        // [self showNotification:@"Your connection is up" message:@"Looks like your connection is back!"];
     }
     
     connection_state = state;
