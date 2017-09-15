@@ -21,13 +21,12 @@
 @synthesize window;
 
 struct ICMPHeader {
-    uint8_t     type;
-    uint8_t     code;
-    uint16_t    checksum;
-    uint16_t    identifier;
-    uint16_t    sequenceNumber;
-    // data...
-    int64_t     sentTime;
+  uint8_t     type;
+  uint8_t     code;
+  uint16_t    checksum;
+  uint16_t    identifier;
+  uint16_t    sequenceNumber;
+  int64_t     sentTime;
 };
 
 #define ICMP_TYPE_ECHO_REPLY 0
@@ -38,321 +37,327 @@ struct ICMPHeader {
 #define CONN_STATE_OK 2
 
 #ifdef DEBUG
-    #define DLog NSLog
+  #define DLog NSLog
 #else
-    #define DLog(X, ...) ;;;
+  #define DLog(X, ...) ;;;
 #endif
 
 /* This is the standard BSD checksum code, modified to use modern types. */
-static uint16_t in_cksum(const void *buffer, size_t bufferLen)
-{
-    size_t              bytesLeft;
-    int32_t             sum;
-    const uint16_t *    cursor;
-    union {
-        uint16_t        us;
-        uint8_t         uc[2];
-    } last;
-    uint16_t            answer;
-    
-    bytesLeft = bufferLen;
-    sum = 0;
-    cursor = buffer;
-    
-    /*
-     * Our algorithm is simple, using a 32 bit accumulator (sum), we add
-     * sequential 16 bit words to it, and at the end, fold back all the
-     * carry bits from the top 16 bits into the lower 16 bits.
-     */
-    while (bytesLeft > 1) {
-        sum += *cursor;
-        cursor += 1;
-        bytesLeft -= 2;
-    }
-    /* mop up an odd byte, if necessary */
-    if (bytesLeft == 1) {
-        last.uc[0] = * (const uint8_t *) cursor;
-        last.uc[1] = 0;
-        sum += last.us;
-    }
-    
-    /* add back carry outs from top 16 bits to low 16 bits */
-    sum = (sum >> 16) + (sum & 0xffff);     /* add hi 16 to low 16 */
-    sum += (sum >> 16);                     /* add carry */
-    answer = ~sum;                          /* truncate to 16 bits */
-    
-    return answer;
+static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
+  size_t              bytesLeft;
+  int32_t             sum;
+  const uint16_t *    cursor;
+  union {
+    uint16_t        us;
+    uint8_t         uc[2];
+  } last;
+  uint16_t            answer;
+  
+  bytesLeft = bufferLen;
+  sum = 0;
+  cursor = buffer;
+  
+  /*
+   * Our algorithm is simple, using a 32 bit accumulator (sum), we add
+   * sequential 16 bit words to it, and at the end, fold back all the
+   * carry bits from the top 16 bits into the lower 16 bits.
+   */
+  while (bytesLeft > 1) {
+    sum += *cursor;
+    cursor += 1;
+    bytesLeft -= 2;
+  }
+  /* mop up an odd byte, if necessary */
+  if (bytesLeft == 1) {
+    last.uc[0] = * (const uint8_t *) cursor;
+    last.uc[1] = 0;
+    sum += last.us;
+  }
+  
+  /* add back carry outs from top 16 bits to low 16 bits */
+  sum = (sum >> 16) + (sum & 0xffff);     /* add hi 16 to low 16 */
+  sum += (sum >> 16);                     /* add carry */
+  answer = ~sum;                          /* truncate to 16 bits */
+  
+  return answer;
 }
 
 int setSocketNonBlocking(int fd) {
-    int flags;
-    
-    /* Set the socket nonblocking.
-     * Note that fcntl(2) for F_GETFL and F_SETFL can't be
-     * interrupted by a signal. */
-    if ((flags = fcntl(fd, F_GETFL)) == -1) return -1;
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) return -1;
-    return 0;
+  int flags;
+  
+  /* Set the socket nonblocking.
+   * Note that fcntl(2) for F_GETFL and F_SETFL can't be
+   * interrupted by a signal. */
+  if ((flags = fcntl(fd, F_GETFL)) == -1) return -1;
+  if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) return -1;
+  return 0;
 }
 
 /* Return the UNIX time in microseconds */
 int64_t ustime(void) {
-    struct timeval tv;
-    long long ust;
-    
-    gettimeofday(&tv, NULL);
-    ust = ((int64_t)tv.tv_sec)*1000000;
-    ust += tv.tv_usec;
-    return ust;
+  struct timeval tv;
+  long long ust;
+  
+  gettimeofday(&tv, NULL);
+  ust = ((int64_t)tv.tv_sec)*1000000;
+  ust += tv.tv_usec;
+  return ust;
 }
 
 - (void) sendPingwithId: (int) identifier andSeq: (int) seq {
-    if (icmp_socket != -1) close(icmp_socket);
-    
-    int s = icmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-    struct sockaddr_in sa;
-    struct ICMPHeader icmp;
-    DLog(@"Ping host: %s", hostToPing);
-    if (s == -1) return;
-    inet_aton(hostToPing, &sa.sin_addr);
-    setSocketNonBlocking(s);
-    
-    /* Note that we create always a new socket, with a different identifier
-     * and sequence number. This is to avoid to read old replies to our ICMP
-     * request, and to be sure that even in the case the user changes
-     * connection, routing, interfaces, everything will continue to work. */
-    icmp.type = ICMP_TYPE_ECHO_REQUEST;
-    icmp.code = 0;
-    icmp.checksum = 0;
-    icmp.identifier = identifier;
-    icmp.sequenceNumber = seq;
-    icmp.sentTime = ustime();   
-    icmp.checksum = in_cksum(&icmp,sizeof(icmp));
-    
-    sendto(s,&icmp,sizeof(icmp),0,(struct sockaddr*)&sa,sizeof(sa));
+  if (icmp_socket != -1) close(icmp_socket);
+  
+  int s = icmp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+  struct sockaddr_in sa;
+  struct ICMPHeader icmp;
+  DLog(@"Ping host: %s", hostToPing);
+  if (s == -1) return;
+  inet_aton(hostToPing, &sa.sin_addr);
+  setSocketNonBlocking(s);
+  
+  /* Note that we create always a new socket, with a different identifier
+   * and sequence number. This is to avoid to read old replies to our ICMP
+   * request, and to be sure that even in the case the user changes
+   * connection, routing, interfaces, everything will continue to work. */
+  icmp.type = ICMP_TYPE_ECHO_REQUEST;
+  icmp.code = 0;
+  icmp.checksum = 0;
+  icmp.identifier = identifier;
+  icmp.sequenceNumber = seq;
+  icmp.sentTime = ustime();
+  icmp.checksum = in_cksum(&icmp,sizeof(icmp));
+  
+  sendto(s,&icmp,sizeof(icmp),0,(struct sockaddr*)&sa,sizeof(sa));
  }
 
 - (void) receivePing {
-    unsigned char packet[1024*16];
-    struct ICMPHeader *reply;
-    int s = icmp_socket;
-    ssize_t nread = read(s,packet,sizeof(packet));
-    int icmpoff;
-    
-    if (nread <= 0) return;
-    DLog(@"Received ICMP %d bytes\n", (int)nread);
-    
-    icmpoff = (packet[0]&0x0f)*4;
-    DLog(@"ICMP offset: %d\n", icmpoff);
-    
-    /* Don't process malformed packets. */
-    if (nread < (icmpoff + (signed)sizeof(struct ICMPHeader))) return;
-    reply = (struct ICMPHeader*) (packet+icmpoff);
-    
-    /* Make sure that identifier and sequence match */
-    if (reply->identifier != icmp_id || reply->sequenceNumber != icmp_seq) {
-        return;
-    }
-    
-    DLog(@"OK received an ICMP packet that matches!\n");
-    if (reply->sentTime > last_received_time) {
-        last_rtt = (int)(ustime()-reply->sentTime)/1000;
-        last_received_time = reply->sentTime;
-        [myStatusItem setToolTip:[NSString stringWithFormat:@"%s: rtt < %.1f seconds", hostToPing, (float)last_rtt/1000]];
-    }
+  unsigned char packet[1024*16];
+  struct ICMPHeader *reply;
+  int s = icmp_socket;
+  ssize_t nread = read(s,packet,sizeof(packet));
+  int icmpoff;
+  
+  if (nread <= 0) return;
+  DLog(@"Received ICMP %d bytes\n", (int)nread);
+  
+  icmpoff = (packet[0]&0x0f)*4;
+  DLog(@"ICMP offset: %d\n", icmpoff);
+  
+  /* Don't process malformed packets. */
+  if (nread < (icmpoff + (signed)sizeof(struct ICMPHeader))) return;
+  reply = (struct ICMPHeader*) (packet+icmpoff);
+  
+  /* Make sure that identifier and sequence match */
+  if (reply->identifier != icmp_id || reply->sequenceNumber != icmp_seq) {
+    return;
+  }
+  
+  DLog(@"OK received an ICMP packet that matches!\n");
+  if (reply->sentTime > last_received_time) {
+    last_rtt = (int)(ustime()-reply->sentTime)/1000;
+    last_received_time = reply->sentTime;
+    [myStatusItem setToolTip:[NSString stringWithFormat:@"%s: rtt < %d ms", hostToPing, (int)last_rtt]];
+  }
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    NSBundle *bundle = [NSBundle mainBundle];
-    
-    [self scheduleTimer];
-    
-    myMenu = [[NSMenu alloc] initWithTitle:@"Menu Title"];
-    NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Quit Icon Ping" action:@selector(exitAction) keyEquivalent:@""];
-    [menuItem setEnabled:YES];
+  NSBundle *bundle = [NSBundle mainBundle];
   
-    statusMenuItem = [[NSMenuItem alloc] initWithTitle:@"..." action:nil keyEquivalent:@""];
-    [statusMenuItem setEnabled:NO];
-    
-    level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"4.2.2.2" action:@selector(useLevel3) keyEquivalent:@""];
-    [level3MenuItem setEnabled:YES];
-    
-    pauseResumeMenuItem = [[NSMenuItem alloc] initWithTitle:@"Pause" action:@selector(pauseResume) keyEquivalent:@""];
-    [pauseResumeMenuItem setEnabled:YES];
-    
-    googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useGoogle) keyEquivalent:@""];
-    
-    openAtStartupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Open at startup" action:@selector(toggleStartupAction) keyEquivalent:@""];
-    [openAtStartupMenuItem setEnabled:YES];
-    if ([self loginItemExists]) {
-        [openAtStartupMenuItem setState:NSOnState];
-    }
-    
-    [myMenu addItem:pauseResumeMenuItem];
-    [myMenu addItem:[NSMenuItem separatorItem]];
-    [myMenu addItem:level3MenuItem];
-    [myMenu addItem:googleMenuItem];
-    [myMenu addItem:[NSMenuItem separatorItem]];
-    [myMenu addItem: statusMenuItem];
-    [myMenu addItem: openAtStartupMenuItem];
-    [myMenu addItem: menuItem];
-    
-    icons = [self getIcons];
+  [self scheduleTimer];
+  
+  myMenu = [[NSMenu alloc] initWithTitle:@"Menu Title"];
+  NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Quit Icon Ping" action:@selector(exitAction) keyEquivalent:@""];
+  [menuItem setEnabled:YES];
 
-    myStatusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength] retain];
-    [myStatusItem setHighlightMode:YES];
-    
-    onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up"] ofType:@"png"]];
-    onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up-alternate"] ofType:@"png"]];
-    
-    offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down"] ofType:@"png"]];
-    offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down-alternate"] ofType:@"png"]];
-    
-    pausedIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused"] ofType:@"png"]];
-    pausedIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused-alternate"] ofType:@"png"]];
-    
-    [myStatusItem setImage:onlineIcon];
-    [myStatusItem setAlternateImage:onlineIconAlternate];
-    [myStatusItem setMenu: myMenu];
-    
-    [self changeConnectionState: CONN_STATE_KO];
-    [self useGoogle];
-    
-    icmp_socket = -1;
-    last_received_time = 0;
-    last_rtt = 0;
-    icmp_id = random()&0xffff;
-    icmp_seq = random()&0xffff;
+  statusMenuItem = [[NSMenuItem alloc] initWithTitle:@"..." action:nil keyEquivalent:@""];
+  [statusMenuItem setEnabled:NO];
+  
+  level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"4.2.2.2" action:@selector(useLevel3) keyEquivalent:@""];
+  [level3MenuItem setEnabled:YES];
+  
+  pauseResumeMenuItem = [[NSMenuItem alloc] initWithTitle:@"Pause" action:@selector(pauseResume) keyEquivalent:@""];
+  [pauseResumeMenuItem setEnabled:YES];
+  
+  googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useGoogle) keyEquivalent:@""];
+  
+  openAtStartupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Open at startup" action:@selector(toggleStartupAction) keyEquivalent:@""];
+  [openAtStartupMenuItem setEnabled:YES];
+  
+  if ([self loginItemExists]) {
+    [openAtStartupMenuItem setState:NSOnState];
+  }
+  
+  [myMenu addItem:pauseResumeMenuItem];
+  [myMenu addItem:[NSMenuItem separatorItem]];
+  [myMenu addItem:level3MenuItem];
+  [myMenu addItem:googleMenuItem];
+  [myMenu addItem:[NSMenuItem separatorItem]];
+  [myMenu addItem: statusMenuItem];
+  [myMenu addItem: openAtStartupMenuItem];
+  [myMenu addItem: menuItem];
+  
+  icons = [self getIcons];
+
+  myStatusItem = [[[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength] retain];
+  [myStatusItem setHighlightMode:YES];
+  
+  onlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up"] ofType:@"png"]];
+  onlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"up-alternate"] ofType:@"png"]];
+  
+  offlineIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down"] ofType:@"png"]];
+  offlineIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"down-alternate"] ofType:@"png"]];
+  
+  pausedIcon = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused"] ofType:@"png"]];
+  pausedIconAlternate = [[NSImage alloc] initWithContentsOfFile: [bundle pathForResource:[icons objectForKey:@"paused-alternate"] ofType:@"png"]];
+  
+  [myStatusItem setImage:onlineIcon];
+  [myStatusItem setAlternateImage:onlineIconAlternate];
+  [myStatusItem setMenu: myMenu];
+  
+  [self changeConnectionState: CONN_STATE_KO];
+  [self useGoogle];
+  
+  icmp_socket = -1;
+  last_received_time = 0;
+  last_rtt = 0;
+  icmp_id = random()&0xffff;
+  icmp_seq = random()&0xffff;
 }
 
 - (void) scheduleTimer {
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
-                  [self methodSignatureForSelector:@selector(timerHandler:)]];
-    
-    timer = [NSTimer timerWithTimeInterval:0.1 invocation:invocation repeats:YES];
-    
-    [invocation setTarget:self];
-    [invocation setSelector:@selector(timerHandler:)];
-    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
+                [self methodSignatureForSelector:@selector(timerHandler:)]];
+  
+  timer = [NSTimer timerWithTimeInterval:0.1 invocation:invocation repeats:YES];
+  
+  [invocation setTarget:self];
+  [invocation setSelector:@selector(timerHandler:)];
+  [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
 }
 
 - (void) pauseResume {
-    if ([pauseResumeMenuItem state] == NSOnState) {
-        [pauseResumeMenuItem setState:NSOffState];
-        [self scheduleTimer];
-        [statusMenuItem setTitle:@"Paused"];
-        DLog(@"Resuming");
-    } else {
-        [pauseResumeMenuItem setState:NSOnState];
-        [myStatusItem setImage:pausedIcon];
-        [myStatusItem setAlternateImage:pausedIconAlternate];
-        [timer invalidate];
-        DLog(@"Pausing");
-    }
+  if ([pauseResumeMenuItem state] == NSOnState) {
+    [pauseResumeMenuItem setState:NSOffState];
+    [self scheduleTimer];
+    [statusMenuItem setTitle:@"Paused"];
+    DLog(@"Resuming");
+  } else {
+    [pauseResumeMenuItem setState:NSOnState];
+    [myStatusItem setImage:pausedIcon];
+    [myStatusItem setAlternateImage:pausedIconAlternate];
+    [timer invalidate];
+    DLog(@"Pausing");
+  }
 }
 
 - (NSDictionary *) getIcons {
-    NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
     
-    if ([osxMode isEqualToString:@"Dark"]) {
-        return @{
-             @"up" : @"up-alternate",
-             @"up-alternate" : @"up-alternate",
-             @"down" : @"down-alternate",
-             @"down-alternate" : @"down-alternate",
-             @"paused" : @"paused-alternate",
-             @"paused-alternate" : @"paused-alternate"
-        };
-    } else {
-        return @{
-             @"up" : @"up",
-             @"up-alternate" : @"up-alternate",
-             @"down" : @"down",
-             @"down-alternate" : @"down-alternate",
-             @"paused" : @"paused",
-             @"paused-alternate" : @"paused-alternate"
-        };
-    }
+  if ([osxMode isEqualToString:@"Dark"]) {
+    return @{
+      @"up" : @"up-alternate",
+      @"up-alternate" : @"up-alternate",
+      @"down" : @"down-alternate",
+      @"down-alternate" : @"down-alternate",
+      @"paused" : @"paused-alternate",
+      @"paused-alternate" : @"paused-alternate"
+    };
+  } else {
+    return @{
+      @"up" : @"up",
+      @"up-alternate" : @"up-alternate",
+      @"down" : @"down",
+      @"down-alternate" : @"down-alternate",
+      @"paused" : @"paused",
+      @"paused-alternate" : @"paused-alternate"
+    };
+  }
 }
 
-- (void) timerHandler: (NSTimer *) t
-{
-    static long clicks = -1;
-    int state;
-    int64_t elapsed;
-    
-    clicks++;
-    if ((clicks % 10) == 0) {
-        DLog(@"Sending ping\n");
-        
-        [self sendPingwithId:icmp_id andSeq: icmp_seq];
-    }
-    [self receivePing];
-    
-    /* Update the current state accordingly */
-    elapsed = (ustime() - last_received_time)/1000; /* in milliseconds */
-    if (elapsed > 3000) {
-        state = CONN_STATE_KO;
-    } else if (last_rtt < 300) {
-        state = CONN_STATE_OK;
-    } else {
-        state = CONN_STATE_SLOW;
-    }
-    
-    if (state != connection_state) {
-        [self changeConnectionState: state];
-    }
+- (void) timerHandler: (NSTimer *) t {
+  static long clicks = -1;
+  int state;
+  int64_t elapsed;
+  
+  clicks++;
+  
+  if ((clicks % 10) == 0) {
+    DLog(@"Sending ping\n");
+    [self sendPingwithId:icmp_id andSeq: icmp_seq];
+  }
+  
+  [self receivePing];
+  
+  /* Update the current state accordingly */
+  elapsed = (ustime() - last_received_time)/1000; /* in milliseconds */
+  
+  if (elapsed > 3000) {
+    state = CONN_STATE_KO;
+  } else if (last_rtt < 250) {
+    state = CONN_STATE_OK;
+  } else {
+    state = CONN_STATE_SLOW;
+  }
+  
+  if (state != connection_state) {
+    [self changeConnectionState: state];
+  }
 }
 
-- (void) showNotification:(NSString *)title message:(NSString *)message
-{
-    NSUserNotification *notification = [[NSUserNotification alloc] init];
-    notification.title = title;
-    notification.informativeText = message;
-    notification.soundName = NSUserNotificationDefaultSoundName;
-    
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+- (void) showNotification:(NSString *)title message:(NSString *)message {
+  NSUserNotification *notification = [[NSUserNotification alloc] init];
+  notification.title = title;
+  notification.informativeText = message;
+  notification.soundName = NSUserNotificationDefaultSoundName;
+  
+  [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
 }
 
-- (void) changeConnectionState: (int) state
-{
-    if (state == CONN_STATE_KO) {
-        [myStatusItem setImage:offlineIcon];
-        [myStatusItem setAlternateImage:offlineIconAlternate];
-        [statusMenuItem setTitle:@"No Connection!"];
-        // [self showNotification:@"Your connection is down" message:@"Connection is down!"];
+- (void) changeConnectionState: (int) state {
+  if (state == CONN_STATE_KO) {
+    [myStatusItem setImage:offlineIcon];
+    [myStatusItem setAlternateImage:offlineIconAlternate];
+    [statusMenuItem setTitle:@"No Connection!"];
+    // [self showNotification:@"Your connection is down" message:@"Connection is down!"];
+  } else {
+    [myStatusItem setImage:onlineIcon];
+    [myStatusItem setAlternateImage:onlineIconAlternate];
+    
+    if (state == CONN_STATE_SLOW) {
+      [statusMenuItem setTitle:@"Connection OK (slow)"];
     } else {
-        [myStatusItem setImage:onlineIcon];
-        [myStatusItem setAlternateImage:onlineIconAlternate];
-        [statusMenuItem setTitle:@"Connection OK"];
-        // [self showNotification:@"Your connection is up" message:@"Looks like your connection is back!"];
+      [statusMenuItem setTitle:@"Connection OK"];
     }
     
-    connection_state = state;
+    
+    //[self showNotification:@"Your connection is up" message:@"Looks like your connection is back!"];
+  }
+  
+  connection_state = state;
 }
 
 - (void) exitAction {
-    exit(0);
+  exit(0);
 }
 
 - (void) useLevel3 {
-    hostToPing = "4.2.2.2";
-    [googleMenuItem setState:NSOffState];
-    [level3MenuItem setState:NSOnState];
+  hostToPing = "4.2.2.2";
+  [googleMenuItem setState:NSOffState];
+  [level3MenuItem setState:NSOnState];
 }
 
 - (void) useGoogle {
-    hostToPing = "8.8.8.8";
-    [googleMenuItem setState:NSOnState];
-    [level3MenuItem setState:NSOffState];
+  hostToPing = "8.8.8.8";
+  [googleMenuItem setState:NSOnState];
+  [level3MenuItem setState:NSOffState];
 }
 
 - (void) toggleStartupAction {
-    if ([self toggleLoginItem]) {
-        [openAtStartupMenuItem setState:NSOnState];
-    } else {
-        [openAtStartupMenuItem setState:NSOffState];
-    }
+  if ([self toggleLoginItem]) {
+    [openAtStartupMenuItem setState:NSOnState];
+  } else {
+    [openAtStartupMenuItem setState:NSOffState];
+  }
 }
 
 /*
@@ -447,31 +452,31 @@ int64_t ustime(void) {
 	// This will retrieve the path for the application
 	// For example, /Applications/test.app
 	NSString * appPath = [[NSBundle mainBundle] bundlePath];
-    BOOL retval = NO;
+  BOOL retval = NO;
     
 	LSSharedFileListRef loginItems = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
 	if ([self loginItemExistsWithLoginItemReference:loginItems ForPath:appPath]) {
 		retval = YES;
 	}
 	CFRelease(loginItems);
-    return retval;
+  return retval;
 }
 
 - (BOOL)toggleLoginItem {
 	NSString * appPath = [[NSBundle mainBundle] bundlePath];
-    BOOL retval;
+  BOOL retval;
 	
 	// Create a reference to the shared file list.
 	LSSharedFileListRef loginItems = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
 	if (![self loginItemExistsWithLoginItemReference:loginItems ForPath:appPath]) {
-        [self enableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
-        retval = YES;
-    } else {
-        [self disableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
-        retval = NO;
-    }
+    [self enableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
+    retval = YES;
+  } else {
+    [self disableLoginItemWithLoginItemsReference:loginItems ForPath:appPath];
+    retval = NO;
+  }
+  
 	CFRelease(loginItems);
-    return retval;
+  return retval;
 }
-
 @end
