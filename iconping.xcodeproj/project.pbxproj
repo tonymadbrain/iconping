@@ -9,12 +9,12 @@
 /* Begin PBXBuildFile section */
 		0E40C9E919357B1500947E96 /* offline-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E40C9E719357B1500947E96 /* offline-alternate.png */; };
 		0E40C9EA19357B1500947E96 /* online-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E40C9E819357B1500947E96 /* online-alternate.png */; };
-		0E4C3A511BCAEB1F00D18B1B /* paused-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E4C3A4F1BCAEB1F00D18B1B /* paused-alternate.png */; settings = {ASSET_TAGS = (); }; };
-		0E4C3A521BCAEB1F00D18B1B /* paused.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E4C3A501BCAEB1F00D18B1B /* paused.png */; settings = {ASSET_TAGS = (); }; };
-		0E7079891BBE434E0076792F /* down-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079851BBE434E0076792F /* down-alternate.png */; settings = {ASSET_TAGS = (); }; };
-		0E70798A1BBE434E0076792F /* down.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079861BBE434E0076792F /* down.png */; settings = {ASSET_TAGS = (); }; };
-		0E70798B1BBE434E0076792F /* up-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079871BBE434E0076792F /* up-alternate.png */; settings = {ASSET_TAGS = (); }; };
-		0E70798C1BBE434E0076792F /* up.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079881BBE434E0076792F /* up.png */; settings = {ASSET_TAGS = (); }; };
+		0E4C3A511BCAEB1F00D18B1B /* paused-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E4C3A4F1BCAEB1F00D18B1B /* paused-alternate.png */; };
+		0E4C3A521BCAEB1F00D18B1B /* paused.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E4C3A501BCAEB1F00D18B1B /* paused.png */; };
+		0E7079891BBE434E0076792F /* down-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079851BBE434E0076792F /* down-alternate.png */; };
+		0E70798A1BBE434E0076792F /* down.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079861BBE434E0076792F /* down.png */; };
+		0E70798B1BBE434E0076792F /* up-alternate.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079871BBE434E0076792F /* up-alternate.png */; };
+		0E70798C1BBE434E0076792F /* up.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E7079881BBE434E0076792F /* up.png */; };
 		0ECB1384191A8C2500221AF4 /* online.png in Resources */ = {isa = PBXBuildFile; fileRef = 0ECB1383191A8C2500221AF4 /* online.png */; };
 		0ECB1386191A8D0100221AF4 /* offline.png in Resources */ = {isa = PBXBuildFile; fileRef = 0ECB1385191A8D0100221AF4 /* offline.png */; };
 		0ECB1389191ABF0800221AF4 /* network.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0ECB1387191ABF0700221AF4 /* network.icns */; };
@@ -164,7 +164,7 @@
 		B6869B9213DD8DDD00F2D69B /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0700;
+				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = "Kiurma s.r.l. / Merzia s.r.l.";
 			};
 			buildConfigurationList = B6869B9513DD8DDD00F2D69B /* Build configuration list for PBXProject "iconping" */;
@@ -253,11 +253,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
@@ -291,11 +299,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;

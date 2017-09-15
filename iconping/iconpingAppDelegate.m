@@ -430,12 +430,15 @@ int64_t ustime(void) {
 				break;
 			}
 		}
-		// Docs for LSSharedFileListItemResolve say we're responsible
+		
+    // Docs for LSSharedFileListItemResolve say we're responsible
 		// for releasing the CFURLRef that is returned
-		CFRelease(thePath);
+    if (thePath) {
+      CFRelease(thePath);
+    }
 	}
     
-	//CFRelease(loginItemsArray);
+	CFRelease(loginItemsArray);
 	
 	return found;
 }
