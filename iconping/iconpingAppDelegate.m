@@ -172,13 +172,13 @@ int64_t ustime(void) {
   statusMenuItem = [[NSMenuItem alloc] initWithTitle:@"..." action:nil keyEquivalent:@""];
   [statusMenuItem setEnabled:NO];
   
-  level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"4.2.2.2" action:@selector(useLevel3) keyEquivalent:@""];
+  level3MenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useLevel3) keyEquivalent:@""];
   [level3MenuItem setEnabled:YES];
   
   pauseResumeMenuItem = [[NSMenuItem alloc] initWithTitle:@"Pause" action:@selector(pauseResume) keyEquivalent:@""];
   [pauseResumeMenuItem setEnabled:YES];
   
-  googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"8.8.8.8" action:@selector(useGoogle) keyEquivalent:@""];
+  googleMenuItem = [[NSMenuItem alloc] initWithTitle:@"1.1.1.1" action:@selector(useGoogle) keyEquivalent:@""];
   
   openAtStartupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Open at startup" action:@selector(toggleStartupAction) keyEquivalent:@""];
   [openAtStartupMenuItem setEnabled:YES];
@@ -341,13 +341,13 @@ int64_t ustime(void) {
 }
 
 - (void) useLevel3 {
-  hostToPing = "4.2.2.2";
+  hostToPing = "8.8.8.8";
   [googleMenuItem setState:NSOffState];
   [level3MenuItem setState:NSOnState];
 }
 
 - (void) useGoogle {
-  hostToPing = "8.8.8.8";
+  hostToPing = "1.1.1.1";
   [googleMenuItem setState:NSOnState];
   [level3MenuItem setState:NSOffState];
 }
